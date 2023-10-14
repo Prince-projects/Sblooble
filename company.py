@@ -22,7 +22,7 @@ class Company:
         return
 
     def write_stats(self):
-        with open('companies' + str(self.name) + '.json', 'w') as file:
+        with open('companies/' + str(self.name) + '.json', 'w') as file:
             stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description,
                      'Logo': self.logo, 'Owner': self.owner}
             json.dump(stats, file)
