@@ -10,10 +10,6 @@ class Company:
         self.logo = logo
         self.owner = str(owner)
 
-    def get_stats(self):
-        stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description, 'Owner': self.owner}
-        return stats
-
     def get_funds(self):
         return self.funds
 

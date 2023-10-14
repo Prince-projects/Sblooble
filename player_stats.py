@@ -6,7 +6,6 @@ api = API()
 player_dir = '/home/karl/CelestialVanilla/world/stats/'
 
 
-# https://pastebin.com/hQXbzPS5
 class PlayerStats:
 
     def __init__(self, player, param1, param2):
