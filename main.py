@@ -23,6 +23,16 @@ class SbloobleBot:
         await interaction.response.send_message(content='See this pastebin for help: '
                                                         'https://pastebin.com/hQXbzPS5')
 
+    @tree.command(name="registercompany", description="Command to register a company.")
+    async def register_company(self, interaction: interactions):
+        await interaction.response.send_message(content='See this pastebin for help: '
+                                                        'https://pastebin.com/hQXbzPS5')
+
+    @tree.command(name="registeraccount", description="Register an account")
+    async def register_account(self, interaction: interactions):
+        await interaction.response.send_message(content='See this pastebin for help: '
+                                                        'https://pastebin.com/hQXbzPS5')
+
     @tree.command(name="stats", description="A statistics command for Celestial's Dew.")
     async def stats_guide(self, interaction: interactions, player: str, param1: str, param2: str):
         stats = player_stats.PlayerStats(player, param1, param2)
