@@ -1,3 +1,6 @@
+import json
+
+
 class Company:
     def __init__(self, name, funds, industry, description, logo):
         self.name = name
@@ -16,3 +19,8 @@ class Company:
     def set_funds(self, new_funds):
         self.funds = new_funds
         return
+
+    def write_stats(self):
+        stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description,
+                 'Logo': self.logo}
+        json.dump(stats, self.name)

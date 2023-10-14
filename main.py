@@ -2,6 +2,8 @@ import json
 import discord
 from discord import app_commands
 from discord import interactions
+
+import company
 import player_stats
 
 intents = discord.Intents.default()
@@ -24,14 +26,15 @@ class SbloobleBot:
                                                         'https://pastebin.com/hQXbzPS5')
 
     @tree.command(name="registercompany", description="Command to register a company.")
-    async def register_company(self, interaction: interactions):
-        await interaction.response.send_message(content='See this pastebin for help: '
-                                                        'https://pastebin.com/hQXbzPS5')
+    async def register_company(self, interaction: interactions, name, funds, industry, description, logo):
+        user_company = company.Company(name, funds, industry, description, logo)
+        user_company.write_stats()
+        await interaction.response.send_message(content="Company created with the following info: " + user_company.get_stats())
 
-    @tree.command(name="registeraccount", description="Register an account")
+    @tree.command(name="registeraccount", description="Command to register an account")
     async def register_account(self, interaction: interactions):
-        await interaction.response.send_message(content='See this pastebin for help: '
-                                                        'https://pastebin.com/hQXbzPS5')
+        user_id = interaction.User.id
+        await interaction.response.send_message(content=user_id)
 
     @tree.command(name="stats", description="A statistics command for Celestial's Dew.")
     async def stats_guide(self, interaction: interactions, player: str, param1: str, param2: str):
