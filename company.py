@@ -2,15 +2,16 @@ import json
 
 
 class Company:
-    def __init__(self, name, funds, industry, description, logo):
+    def __init__(self, name, funds, industry, description, logo, owner):
         self.name = name
         self.funds = funds
         self.industry = industry
         self.description = description
         self.logo = logo
+        self.owner = str(owner)
 
     def get_stats(self):
-        stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description}
+        stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description, 'Owner': self.owner}
         return stats
 
     def get_funds(self):
@@ -21,6 +22,7 @@ class Company:
         return
 
     def write_stats(self):
-        stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description,
-                 'Logo': self.logo}
-        json.dump(stats, self.name)
+        with open('companies' + str(self.name) + '.json', 'w') as file:
+            stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description,
+                     'Logo': self.logo, 'Owner': self.owner}
+            json.dump(stats, file)
