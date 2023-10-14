@@ -41,4 +41,3 @@ class SbloobleBot:
 
 
 client.run(load_creds())
-print('epico')
