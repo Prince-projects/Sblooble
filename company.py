@@ -5,3 +5,4 @@ class Company:
         self.industry = industry
         self.description = description
         self.logo = logo
+lool
