@@ -36,8 +36,18 @@ def company_exists(tested_company):
         return 'no'
 
 
+def user_exists(user):
+    exists = False
+    existing = os.scandir('users')
+    for exist in existing:
+        if exist.name == user + '.json':
+            exists = True
+    if not exists:
+        return 'no'
+
+
 # random.randint(60, 240)
-@tasks.loop(seconds=5)
+@tasks.loop(minutes=5)
 async def generate_event():
     add = False
     dt = datetime.today()
@@ -80,8 +90,8 @@ async def event_history(interaction: interactions):
         content=events)
 
 
-@tree.command(name="statsguide", description="A guide for the stats command")
-async def stats_guide(interaction: interactions):
+@tree.command(name="playerstatsguide", description="A guide for the stats command")
+async def player_stats_guide(interaction: interactions):
     await interaction.response.send_message(content='See this pastebin for help: '
                                                     'https://pastebin.com/hQXbzPS5')
 
@@ -101,6 +111,12 @@ async def stats_guide(interaction: interactions):
 )
 async def company_register(interaction: interactions, name: str, funds: float, industry: app_commands.Choice[str],
                            description: str, logo: str):
+    if user_exists(str(interaction.user)) == 'no':
+        await interaction.response.send_message(content='Make sure you register an account first!')
+        return
+    if funds < 1:
+        await interaction.response.send_message(content='Allocate funds to the company. PLEASE.')
+        return
     industry_array = ['logging', 'mining', 'logistics', 'fishing', 'farming', 'crafting', 'building']
     with open('users/' + str(interaction.user) + '.json') as file:
         content = json.load(file)
@@ -126,11 +142,11 @@ async def account_register(interaction: interactions):
         if str(user_id) in single_user.name:
             await interaction.response.send_message(content='User already created!')
             return
-        with open('users/' + user_id + '.json', 'w') as f:
-            user_dict = {'user': user_id, 'funds': 100}
-            json.dump(user_dict, f)
-            await interaction.response.send_message(content='Account ' + user_id + ' created!')
-    if len(os.listdir('users')) == 0:  # If no users in directory, loop will not run, so we have a catch here.
+    with open('users/' + user_id + '.json', 'w') as f:
+        user_dict = {'user': user_id, 'funds': 100}
+        json.dump(user_dict, f)
+        await interaction.response.send_message(content='Account ' + user_id + ' created!')
+    if len(os.listdir('users/')) == 0:  # If no users in directory, loop will not run, so we have a catch here.
         with open('users/' + user_id + '.json', 'w') as f:
             user_dict = {'user': user_id, 'funds': 100}
             json.dump(user_dict, f)
@@ -145,7 +161,8 @@ async def account_info(interaction: interactions, player: str):
             with open('users/' + player + '.json') as f:
                 content = json.load(f)
                 await interaction.response.send_message(
-                    content='Account found! Name: ' + content['name'] + ', Funds remaining: ' + content['funds'] + '.')
+                    content='Account found! Name: ' + content['user'] + ', Funds remaining: ' + str(
+                        content['funds']) + '.')
                 return
     await interaction.response.send_message(content='Invalid user, or user not registered!')
 
@@ -157,11 +174,12 @@ async def company_info(interaction: interactions, desired_company: str):
         return
     with open('companies/' + desired_company + '.json') as file:
         content = json.load(file)
-    await interaction.response.send_message(content='Company found!' + '\n' + '`Name: ' + content['Name'] + '`\n' + '`Funds: ' +
-                                                    str(content['Funds']) + '`\n' + '`Industry: ' + content['Industry'] +
-                                                    '`\n' + '`Description: ' + content['Description'] + '`\n' +
-                                                    '`Logo Link: ' + content['Logo'] + '`\n' + '`Owner: ' +
-                                                    content['Owner'] + '`')
+    await interaction.response.send_message(
+        content='Company found!' + '\n' + '`Name: ' + content['Name'] + '`\n' + '`Funds: ' +
+                str(content['Funds']) + '`\n' + '`Industry: ' + content['Industry'] +
+                '`\n' + '`Description: ' + content['Description'] + '`\n' +
+                '`Logo Link: ' + content['Logo'] + '`\n' + '`Owner: ' +
+                content['Owner'] + '`')
 
 
 @tree.command(name="companylist", description="Command to check the list of companies")
@@ -186,6 +204,9 @@ async def player_stats(interaction: interactions, player: str, param1: str, para
 
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
 async def company_withdraw(interaction: interactions, withdraw_amount: float, desired_company: str):
+    if user_exists(str(interaction.user)) == 'no':
+        await interaction.response.send_message(content='Make sure you register an account first!')
+        return
     if company_exists(desired_company) == 'no':
         await interaction.response.send_message(content='No company found.')
         return
@@ -210,6 +231,9 @@ async def company_withdraw(interaction: interactions, withdraw_amount: float, de
 
 @tree.command(name="companydeposit", description="A command to deposit funds from a company you own.")
 async def company_deposit(interaction: interactions, deposit_amount: float, desired_company: str):
+    if user_exists(str(interaction.user)) == 'no':
+        await interaction.response.send_message(content='Make sure you register an account first!')
+        return
     if company_exists(desired_company) == 'no':
         await interaction.response.send_message(content='No company found.')
         return
