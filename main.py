@@ -47,7 +47,7 @@ def user_exists(user):
 
 
 # random.randint(60, 240)
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=60)
 async def generate_event():
     add = False
     dt = datetime.today()
