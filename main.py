@@ -273,8 +273,10 @@ async def buy_item(interaction: interactions, target: str, item: str, amount: in
         user_content['funds'] = user_content['funds'] - (item_price * amount)
         json.dump(user_content, userfile)
     server = minecraft_networking.MinecraftNetworking(target, item, amount)
-    server.buy_command()
-    await interaction.response.send_message(content='Deposit Successful!')
+    if not server.buy_command():
+        await interaction.response.send_message(content='Player not online!')
+    else:
+        await interaction.response.send_message(content='Buy Successful!')
 
 
 @client.event

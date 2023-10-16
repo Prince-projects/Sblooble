@@ -19,7 +19,16 @@ class MinecraftNetworking:
         self.target = target
         self.amount = amount
 
+    def player_online(self):
+        if rcon.login(load_creds()):
+            players = rcon.command('list')
+            if self.target not in players:
+                return False
+            return True
+
     def buy_command(self):
+        if not self.player_online():
+            return False
         if rcon.login(load_creds()):
             print('give ' + self.target + ' ' + self.item + ' ' + str(self.amount))
             rcon.command('give ' + self.target + ' ' + self.item + ' ' + str(self.amount))
