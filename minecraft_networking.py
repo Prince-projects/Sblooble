@@ -23,3 +23,4 @@ class MinecraftNetworking:
         if rcon.login(load_creds()):
             print('give ' + self.target + ' ' + self.item + ' ' + str(self.amount))
             rcon.command('give ' + self.target + ' ' + self.item + ' ' + str(self.amount))
+            print('yip')
