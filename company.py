@@ -10,13 +10,6 @@ class Company:
         self.logo = logo
         self.owner = str(owner)
 
-    def get_funds(self):
-        return self.funds
-
-    def set_funds(self, new_funds):
-        self.funds = new_funds
-        return
-
     def write_stats(self):
         with open('companies/' + str(self.name) + '.json', 'w') as file:
             stats = {'Name': self.name, 'Funds': self.funds, 'Industry': self.industry, 'Description': self.description,

@@ -11,6 +11,7 @@ from discord import interactions
 import os
 
 import company
+import minecraft_networking
 import player_stats
 import company_event
 
@@ -19,6 +20,10 @@ intents.message_content = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)  # A tree of slash commands for the bot.
 
+
+# Add indents to each json dump
+# Add a refresh command for the tree sync to avoid blacklisting
+# Add a redeem ability to the bot, so you can redeem codes you get
 
 def load_creds():
     with open("creds.json") as f:
@@ -49,7 +54,6 @@ def user_exists(user):
 # random.randint(60, 240)
 @tasks.loop(minutes=60)
 async def generate_event():
-    add = False
     dt = datetime.today()
     industry_array = ['logging', 'mining', 'logistics', 'fishing', 'farming', 'crafting', 'building']
     effect_array = ['positive', 'negative']
@@ -252,6 +256,26 @@ async def company_deposit(interaction: interactions, deposit_amount: float, desi
         json.dump(content, file)
     await interaction.response.send_message(content='Deposit Successful!')
 
+@tree.command(name="buyitem", description="A command to buy items")
+async def buy_item(interaction: interactions, target: str, item: str, amount: int):
+    if user_exists(str(interaction.user)) == 'no':
+        await interaction.response.send_message(content='Make sure you register an account first!')
+        return
+    with open('price_list.json') as f:
+        price_content = json.load(f)
+        item_price = price_content[item]
+    with open('users/' + str(interaction.user) + '.json', 'r') as userfile:
+        user_content = json.load(userfile)
+    if float(user_content['funds']) < item_price * amount:
+        await interaction.response.send_message(content='Not enough funds!')
+        return
+    with open('users/' + str(interaction.user) + '.json', 'w') as userfile:
+        user_content['funds'] = user_content['funds'] - (item_price * amount)
+        json.dump(user_content, userfile)
+    server = minecraft_networking.MinecraftNetworking(target, item, amount)
+    server.buy_command()
+    await interaction.response.send_message(content='Deposit Successful!')
+
 
 @client.event
 async def on_ready():
@@ -269,6 +293,9 @@ async def on_ready():
         os.mkdir('negativeevents')
     if 'event_history.json' not in names:
         with open('event_history.json', 'w') as f:
+            pass
+    if 'price_list.json' not in names:
+        with open('price_list.json', 'w') as f:
             pass
     await tree.sync()
     generate_event.start()
