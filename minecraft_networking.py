@@ -4,6 +4,8 @@ HOST = 'localhost'  # Hostname of the Minecraft server
 PORT = 25575  # Port number of the RCON server
 rcon = RCONClient(HOST, port=PORT)
 
+def load_creds():
+    return
 class MinecraftNetworking:
     def __init__(self, target, item, amount):
         self.item = item
