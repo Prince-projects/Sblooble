@@ -1,6 +1,6 @@
 from mctools import RCONClient
 
-HOST = 'mc.server.net'  # Hostname of the Minecraft server
+HOST = 'localhost'  # Hostname of the Minecraft server
 PORT = 25575  # Port number of the RCON server
 rcon = RCONClient(HOST, port=PORT)
 
