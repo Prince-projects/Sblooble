@@ -11,6 +11,6 @@ class MinecraftNetworking:
         self.amount = amount
 
     def buy_command(self):
-        if rcon.login('***REMOVED***'):
+        if rcon.login():
             print('give ' + self.target + ' ' + self.item + ' ' + str(self.amount))
             rcon.command('give ' + self.target + ' ' + self.item + ' ' + str(self.amount))
