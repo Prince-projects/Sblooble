@@ -31,6 +31,22 @@ def load_creds():
         return content['token']
 
 
+def get_total_wealth():
+    company_funds = []
+    user_funds = []
+    companies = os.scandir('companies')
+    users = os.scandir('users')
+    for company in companies:
+        with open(company) as f:
+            content = json.load(f)
+            company_funds.append(content['Funds'])
+    for user in users:
+        with open(user) as f:
+            content = json.load(f)
+            user_funds.append(content['funds'])
+    return sum(user_funds) + sum(company_funds)
+
+
 def company_exists(tested_company):
     exists = False
     existing = os.scandir('companies')
@@ -51,8 +67,19 @@ def user_exists(user):
         return 'no'
 
 
+def calc_item_price(item):
+    with open('price_list.json') as f:
+        content = json.load(f)
+        keys = content.keys()
+        for key in keys:
+            if item == key:
+                result = content[key]
+        price = math.floor(get_total_wealth() * result)
+        return price
+
+
 # random.randint(60, 240)
-@tasks.loop(minutes=60)
+# @tasks.loop(minutes=60) - UNCOMMENT BEFORE PSUHING TO PROD ****************************************************************************************************************************************
 async def generate_event():
     dt = datetime.today()
     industry_array = ['logging', 'mining', 'logistics', 'fishing', 'farming', 'crafting', 'building']
@@ -77,6 +104,13 @@ async def generate_event():
             with open("event_history.json", 'w') as file:
                 json.dump(result, file)
 
+@tasks.loop(minutes=random.randint(60, 300))
+async def generate_cash_code():
+    return
+    # Get list of online players
+    # Get stats of all players for a few industries (fish caught, logs chopped, distance walked, etc.)
+    # select one at random
+    # get top breaker, 50% chance it's them, rest of the chance is split between the rest. top 5 only if roll is 5+ to top, 2nd is 25%, 12.5% 3rd, 4/5th is 6.25%
 
 @tree.command(name="companyeventhistory", description="A command to check event history")
 async def event_history(interaction: interactions):
@@ -199,11 +233,30 @@ async def company_list(interaction: interactions):
     await interaction.response.send_message(content=result)
 
 
+@tree.command(name="itemprice", description="Command to check the list of item prices")
+async def item_price(interaction: interactions, item: str):
+    price = calc_item_price(item)
+    await interaction.response.send_message(content=str(item) + ', Price: ' + str(price))
+
+
 @tree.command(name="playerstats", description="A statistics command for Celestial's Dew.")
 async def player_stats(interaction: interactions, player: str, param1: str, param2: str):
     stats = player_stats.PlayerStats(player, param1, param2)
     result = await stats.find_stats()
     await interaction.response.send_message(content='Parameter: ' + param2 + '. ' + 'Result: ' + str(result))
+
+
+@tree.command(name="refresh", description="OWNER command to refresh command trees")
+async def refresh(interaction: interactions):
+    if str(interaction.user) == 'princecord':
+        await tree.sync()
+        await interaction.response.send_message(
+            content='Refreshed tree commands. Some text to make it seem mystical and '
+                    'developer-e. TIME=9291, CODE=PUR21, ERRNO=NONE, FLEEPORGLORB=YEP YEP')
+    else:
+        await interaction.response.send_message(
+            content='You are NOT the owner... event grabbed, reported, stored, snacked on, consumed, ingested. he '
+                    'WILL be made aware.')
 
 
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
@@ -256,21 +309,20 @@ async def company_deposit(interaction: interactions, deposit_amount: float, desi
         json.dump(content, file)
     await interaction.response.send_message(content='Deposit Successful!')
 
-@tree.command(name="buyitem", description="A command to buy items")
-async def buy_item(interaction: interactions, target: str, item: str, amount: int):
+
+@tree.command(name="itembuy", description="A command to buy items")
+async def item_buy(interaction: interactions, target: str, item: str, amount: int):
     if user_exists(str(interaction.user)) == 'no':
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
-    with open('price_list.json') as f:
-        price_content = json.load(f)
-        item_price = price_content[item]
+    item_price_individual = calc_item_price(item)
     with open('users/' + str(interaction.user) + '.json', 'r') as userfile:
         user_content = json.load(userfile)
-    if float(user_content['funds']) < item_price * amount:
+    if float(user_content['funds']) < item_price_individual * amount:
         await interaction.response.send_message(content='Not enough funds!')
         return
     with open('users/' + str(interaction.user) + '.json', 'w') as userfile:
-        user_content['funds'] = user_content['funds'] - (item_price * amount)
+        user_content['funds'] = user_content['funds'] - (item_price_individual * amount)
         json.dump(user_content, userfile)
     server = minecraft_networking.MinecraftNetworking(target, item, amount)
     if not server.buy_command():
@@ -299,8 +351,7 @@ async def on_ready():
     if 'price_list.json' not in names:
         with open('price_list.json', 'w') as f:
             pass
-    await tree.sync()
-    generate_event.start()
+    # generate_event.start() *************************************************************** UNCOMMENT b4 PROD
     print(f'Logged in as {client.user}')
 
 

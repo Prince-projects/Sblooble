@@ -5,6 +5,11 @@ import random
 
 
 class CompanyEvent:
+
+    def global_mods(self):
+
+        return
+
     def event_generator(self, industry, effect):
         file_names = []
         if effect == "positive":
@@ -35,7 +40,6 @@ class CompanyEvent:
                     content['Funds'] = content['Funds'] - mod_amount
             with open(file, 'w') as f:
                 json.dump(content, f)
-
 
     def company_cleanup(self):
         remove = False
