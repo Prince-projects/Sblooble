@@ -6,10 +6,6 @@ import random
 
 class CompanyEvent:
 
-    def global_mods(self):
-
-        return
-
     def event_generator(self, industry, effect):
         file_names = []
         if effect == "positive":

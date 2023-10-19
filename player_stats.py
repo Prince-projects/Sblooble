@@ -28,6 +28,13 @@ class PlayerStats:
                     return content['stats'][self.param1][self.param2]
 
     async def write_totals(self):
+        logistics = 0
+        building = 0
+        mining = 0
+        logging = 0
+        crafting = 0
+        fishing = 0
+        farming = 0
         logging_arr = ['minecraft:oak_wood', 'minecraft:birch_wood', 'minecraft:spruce_wood', 'minecraft:acacia_wood',
                        'minecraft:jungle_wood', 'minecraft:mangrove_wood', 'minecraft:dark_oak_wood',
                        'minecraft:cherry_wood']
@@ -36,39 +43,41 @@ class PlayerStats:
         logistics_arr = ['minecraft:swim_one_cm', 'minecraft:fly_one_cm', 'minecraft:sprint_one_cm',
                          'minecraft:walk_one_cm', 'minecraft:boat_one_cm']
         files = os.scandir(player_dir)
-        if not os.stat('totals.json').st_size == 0:
-            with open('totals.json') as f:
-                content = json.load(f)
-                logging = content['logging']
-                mining = content['mining']
-                farming = content['farming']
-                logistics = content['logistics']
-                building = content['building']
-                crafting = content['crafting']
-                fishing = content['fishing']
         for file in files:
             with open(file) as f:
                 content = json.load(f)
-                building_keys = content['stats']['minecraft:used'].keys()
-                crafting_keys = content['stats']['minecraft:crafted'].keys()
-                mining_keys = content['stats']['minecraft:mined'].keys()
-                for index in logging_arr:
-                    if not content['stats']['minecraft:mined'][index] is None:
-                        logging = logging + content['stats']['minecraft:mined'][index]
-                for index in farming_arr:
-                    if not content['stats']['minecraft:mined'][index] is None:
-                        farming = farming + content['stats']['minecraft:mined'][index]
-                for index in logistics_arr:
-                    if not content['stats']['minecraft:custom'][index] is None:
-                        logistics = logistics + content['stats']['minecraft:custom'][index]
-                if not content['stats']['minecraft:custom']['minecraft:fish_caught'] is None:
-                    fishing = fishing + content['stats']['minecraft:custom']['minecraft:fish_caught']
-                for key in building_keys:
-                    building = building + content['stats']['minecraft:used'][key]
-                for key in crafting_keys:
-                    crafting = crafting + content['stats']['minecraft:used'][key]
-                for key in mining_keys:
-                    mining = mining + content['stats']['minecraft:mined'][key]
-        result_dict = {'logging': logging, 'mining': mining, 'fishing': fishing, 'crafting': crafting, 'building': building, 'farming': farming, 'logistics': logging}
-        with open('totals.json') as f:
+                if not content['stats'].get('minecraft:used') is None:
+                    building_keys = content['stats']['minecraft:used'].keys()
+                if not content['stats'].get('minecraft:crafted') is None:
+                    crafting_keys = content['stats']['minecraft:crafted'].keys()
+                if not content['stats'].get('minecraft:mined') is None:
+                    mining_keys = content['stats']['minecraft:mined'].keys()
+                if not content['stats'].get('minecraft:mined') is None:
+                    for index in logging_arr:
+                        if not content['stats']['minecraft:mined'].get(index) is None:
+                            logging = logging + content['stats']['minecraft:mined'][index]
+                if not content['stats'].get('minecraft:mined') is None:
+                    for index in farming_arr:
+                        if not content['stats']['minecraft:mined'].get(index) is None:
+                            farming = farming + content['stats']['minecraft:mined'][index]
+                if not content['stats'].get('minecraft:custom') is None:
+                    for index in logistics_arr:
+                        if not content['stats']['minecraft:custom'].get(index) is None:
+                            logistics = logistics + content['stats']['minecraft:custom'][index]
+                if not content['stats'].get('minecraft:custom') is None:
+                    if not content['stats']['minecraft:custom'].get('minecraft:fish_caught') is None:
+                        fishing = fishing + content['stats']['minecraft:custom']['minecraft:fish_caught']
+                if not content['stats'].get('minecraft:used') is None:
+                    for key in building_keys:
+                        building = building + content['stats']['minecraft:used'][key]
+                if not content['stats'].get('minecraft:crafted') is None:
+                    for key in crafting_keys:
+                        crafting = crafting + content['stats']['minecraft:crafted'][key]
+                if not content['stats'].get('minecraft:used') is None:
+                    for key in mining_keys:
+                        mining = mining + content['stats']['minecraft:mined'][key]
+        building = building - mining
+        result_dict = {'logging': logging, 'mining': mining, 'fishing': fishing, 'crafting': crafting,
+                       'building': building, 'farming': farming, 'logistics': logging}
+        with open('totals.json', 'w') as f:
             json.dump(result_dict, f)

@@ -12,7 +12,7 @@ import os
 
 import company
 import minecraft_networking
-import player_stats
+import player_stats as player_stat
 import company_event
 
 intents = discord.Intents.default()
@@ -106,9 +106,9 @@ async def generate_event():
 
 
 @tasks.loop(seconds=5)
-async def generate_cash_code():
+async def generate_cash():
     difference_dict = {}
-    stats = player_stats.PlayerStats(None, None, None)
+    stats = player_stat.PlayerStats(None, None, None)
     if not os.stat('totals.json').st_size == 0:
         with open('totals.json') as f:
             previous_content = json.load(f)
@@ -120,7 +120,9 @@ async def generate_cash_code():
         for item in previous_content:
             item_diff = current_content[item] - previous_content[item]
             difference_dict[item] = item_diff
+        print('difference')
         print(difference_dict)
+
     else:
         await stats.write_totals()
 
@@ -261,7 +263,7 @@ async def item_price(interaction: interactions, item: str):
 
 @tree.command(name="playerstats", description="A statistics command for Celestial's Dew.")
 async def player_stats(interaction: interactions, player: str, param1: str, param2: str):
-    stats = player_stats.PlayerStats(player, param1, param2)
+    stats = player_stat.PlayerStats(player, param1, param2)
     result = await stats.find_stats()
     await interaction.response.send_message(content='Parameter: ' + param2 + '. ' + 'Result: ' + str(result))
 
@@ -375,6 +377,7 @@ async def on_ready():
         with open('totals.json', 'w') as f:
             pass
     # generate_event.start() *************************************************************** UNCOMMENT b4 PROD
+    generate_cash.start()
     print(f'Logged in as {client.user}')
 
 
