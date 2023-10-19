@@ -1,6 +1,7 @@
+import binascii
 import math
 from datetime import datetime
-
+from mojang import API
 from discord.ext import tasks
 import json
 import random
@@ -21,14 +22,24 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)  # A tree of slash commands for the bot.
 
 
-# Add indents to each json dump
-# Add a refresh command for the tree sync to avoid blacklisting
+# Add the boosts to the fund mods
+# Add the redeem command
+# Add the whisper queue to whisper to the relevant minecraft player
+# test
 # Add a redeem ability to the bot, so you can redeem codes you get
+
 
 def load_creds():
     with open("creds.json") as f:
         content = json.load(f)
         return content['token']
+
+
+def convert_to_uuid(playerjson: str):
+    api = API()
+    uuid_prep = playerjson.replace('.json', '')
+    uuid = api.get_uuid(uuid_prep)
+    return uuid
 
 
 def get_total_wealth():
@@ -106,32 +117,43 @@ async def generate_event():
 
 
 @tasks.loop(seconds=5)
+async def give_codes():
+    network = minecraft_networking.MinecraftNetworking(None, None, None)
+    network.send_codes()
+
+
+@tasks.loop(seconds=15)
 async def generate_cash():
-    difference_dict = {}
+    cash_content = {}
+    dt = datetime.today()
+    industry_array = ['mining', 'logistics', 'fishing', 'farming', 'crafting', 'building', 'logging', ]
+    industry_values = {'logging': 0.001, 'mining': 0.0005, 'logistics': 0.0005, 'fishing': 0.05, 'farming': 0.005,
+                       'crafting': 0.005, 'building': 0.0005}
+    industry_rand = random.randint(0, len(industry_array) - 1)
     stats = player_stat.PlayerStats(None, None, None)
-    if not os.stat('totals.json').st_size == 0:
-        with open('totals.json') as f:
-            previous_content = json.load(f)
-        await stats.write_totals()
-        with open('totals.json') as f:
-            current_content = json.load(f)
-        print(current_content)
-        print(previous_content)
-        for item in previous_content:
-            item_diff = current_content[item] - previous_content[item]
-            difference_dict[item] = item_diff
-        print('difference')
-        print(difference_dict)
-
-    else:
-        await stats.write_totals()
-
-    return
-    # Get the total stats of all players for each industry
-    # Write to a file
-    # On generate, compare the differences between all.
-    # Do math to calc currency reward
-    # Distribute to all players that had a change in amount.
+    event = company_event.CompanyEvent()
+    difference_dict = await stats.write_totals()
+    event.calc_boosts(difference_dict)
+    # Time to calc the individual payouts:
+    with open('player_difference.json') as f:
+        content = json.load(f)
+        content_keys = content.keys()
+        for key in content_keys:
+            if not content[key][industry_array[industry_rand]] == 0 and not difference_dict[
+                                                                                industry_array[industry_rand]] == 0:
+                print('Generating Code..')
+                personal_contrib = content[key][industry_array[industry_rand]] / difference_dict[
+                    industry_array[industry_rand]]
+                award_amt = (difference_dict[industry_array[industry_rand]] * (get_total_wealth() * industry_values[
+                    industry_array[industry_rand]] / 50) * personal_contrib)
+                award_amt = math.ceil(award_amt)
+                if os.path.isfile("cashcodes/" + key):
+                    with open("cashcodes/" + key) as f:
+                        cash_content = json.load(f)
+                        cash_content[
+                            str(math.floor(dt.timestamp())) + str(binascii.b2a_hex(os.urandom(15)))] = award_amt
+                with open("cashcodes/" + key, 'w') as f:
+                    json.dump(cash_content, f)
 
 
 @tree.command(name="companyeventhistory", description="A command to check event history")
@@ -281,6 +303,35 @@ async def refresh(interaction: interactions):
                     'WILL be made aware.')
 
 
+@tree.command(name="redeem", description="Command to redeem codes for bot currency")
+async def redeem(interaction: interactions, code: str):
+    marked_del = []
+    if user_exists(str(interaction.user)) == 'no':
+        await interaction.response.send_message(
+            content='Register an account first')
+        return
+    files = os.scandir('cashcodes/')
+    for file in files:
+        with open(file) as f:
+            content = json.load(f)
+            keys = content.keys()
+            for key in keys:
+                if code == key:
+                    marked_del.append(code)
+                    with open('users/' + str(interaction.user) + '.json', 'r') as userfile:
+                        user_content = json.load(userfile)
+                    with open('users/' + str(interaction.user) + '.json', 'w') as userfile:
+                        user_content['funds'] = user_content['funds'] + content[key]
+                        json.dump(user_content, userfile)
+        for x in marked_del:
+            content.pop(x)
+        with open(file, 'w') as f:
+            json.dump(content, f)
+        await interaction.response.send_message(
+            content='Code redeemed!')
+        return
+
+
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
 async def company_withdraw(interaction: interactions, withdraw_amount: float, desired_company: str):
     if user_exists(str(interaction.user)) == 'no':
@@ -363,6 +414,8 @@ async def on_ready():
         os.mkdir('users')
     if "companies" not in names:
         os.mkdir('companies')
+    if "cashcodes" not in names:
+        os.mkdir('cashcodes')
     if "positiveevents" not in names:
         os.mkdir('positiveevents')
     if "negativeevents" not in names:
@@ -376,8 +429,18 @@ async def on_ready():
     if 'totals.json' not in names:
         with open('totals.json', 'w') as f:
             pass
+    if 'boosts.json' not in names:
+        with open('boosts.json', 'w') as f:
+            pass
+    if 'individual_contributions.json' not in names:
+        with open('individual_contributions.json', 'w') as f:
+            pass
+    if 'player_difference.json' not in names:
+        with open('player_difference.json', 'w') as f:
+            pass
     # generate_event.start() *************************************************************** UNCOMMENT b4 PROD
     generate_cash.start()
+    give_codes.start()
     print(f'Logged in as {client.user}')
 
 
