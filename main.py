@@ -104,13 +104,33 @@ async def generate_event():
             with open("event_history.json", 'w') as file:
                 json.dump(result, file)
 
-@tasks.loop(minutes=random.randint(60, 300))
+
+@tasks.loop(seconds=5)
 async def generate_cash_code():
+    difference_dict = {}
+    stats = player_stats.PlayerStats(None, None, None)
+    if not os.stat('totals.json').st_size == 0:
+        with open('totals.json') as f:
+            previous_content = json.load(f)
+        await stats.write_totals()
+        with open('totals.json') as f:
+            current_content = json.load(f)
+        print(current_content)
+        print(previous_content)
+        for item in previous_content:
+            item_diff = current_content[item] - previous_content[item]
+            difference_dict[item] = item_diff
+        print(difference_dict)
+    else:
+        await stats.write_totals()
+
     return
-    # Get list of online players
-    # Get stats of all players for a few industries (fish caught, logs chopped, distance walked, etc.)
-    # select one at random
-    # get top breaker, 50% chance it's them, rest of the chance is split between the rest. top 5 only if roll is 5+ to top, 2nd is 25%, 12.5% 3rd, 4/5th is 6.25%
+    # Get the total stats of all players for each industry
+    # Write to a file
+    # On generate, compare the differences between all.
+    # Do math to calc currency reward
+    # Distribute to all players that had a change in amount.
+
 
 @tree.command(name="companyeventhistory", description="A command to check event history")
 async def event_history(interaction: interactions):
@@ -350,6 +370,9 @@ async def on_ready():
             pass
     if 'price_list.json' not in names:
         with open('price_list.json', 'w') as f:
+            pass
+    if 'totals.json' not in names:
+        with open('totals.json', 'w') as f:
             pass
     # generate_event.start() *************************************************************** UNCOMMENT b4 PROD
     print(f'Logged in as {client.user}')
