@@ -24,9 +24,11 @@ class CompanyEvent:
             return result
 
     def mod_funds(self, rate, effect, industry):
+
         files = os.scandir('companies')
         with open('boosts.json') as f:
             boost_content = json.load(f)
+            rate = rate + boost_content[industry]
         for file in files:
             with open(file) as f:
                 content = json.load(f)
@@ -34,10 +36,10 @@ class CompanyEvent:
                     funds = content['Funds']
                     mod_amount = math.floor(funds * (rate / 100))
                     if effect == 'positive':
-                        content['Funds'] = content['Funds'] + mod_amount + boost_content[industry]
+                        content['Funds'] = content['Funds'] + mod_amount
                         boost_content[industry] = 0
                     if effect == 'negative':
-                        content['Funds'] = content['Funds'] - mod_amount + boost_content[industry]
+                        content['Funds'] = content['Funds'] - mod_amount
                         boost_content[industry] = 0
                     with open('boosts.json', 'w') as boost_file:
                         json.dump(boost_content, boost_file)
@@ -64,13 +66,13 @@ class CompanyEvent:
         if not os.stat('boosts.json').st_size == 0:
             with open('boosts.json') as f:
                 old_content = json.load(f)
-        logging_boost = 0
-        logi_boost = 0
-        crafting_boost = 0
-        farming_boost = 0
-        mining_boost = 0
-        fishing_boost = 0
-        building_boost = 0
+        logging_boost = 3
+        logi_boost = 3
+        crafting_boost = 3
+        farming_boost = 3
+        mining_boost = 3
+        fishing_boost = 3
+        building_boost = 3
         if difference_dict['mining'] > 20000:
             mining_boost = math.ceil(difference_dict['mining'] / 10000)
             if not os.stat('boosts.json').st_size == 0:
@@ -109,6 +111,5 @@ class CompanyEvent:
         boost_dict = {'fishing': fishing_boost, 'building': building_boost, 'crafting': crafting_boost,
                       'farming': farming_boost, 'logistics': logi_boost, 'logging': logging_boost,
                       'mining': mining_boost}
-        print(boost_dict)
         with open('boosts.json', 'w') as f:
             json.dump(boost_dict, f)

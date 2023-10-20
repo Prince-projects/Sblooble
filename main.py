@@ -22,12 +22,6 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)  # A tree of slash commands for the bot.
 
 
-# Add the boosts to the fund mods
-# FIX THE MOJANG THING. WHY IS IT EVEN RETURNING NONE ON VALID UUID?
-# Add the whisper queue to whisper to the relevant minecraft player
-# test
-# Add a redeem ability to the bot, so you can redeem codes you get
-
 
 def load_creds():
     with open("creds.json") as f:
@@ -145,14 +139,11 @@ async def generate_cash():
             if not content[key][industry_array[industry_rand]] == 0 and not difference_dict[
                                                                                 industry_array[industry_rand]] == 0:
                 print('Generating Code..')
-                print(key)
                 personal_contrib = content[key][industry_array[industry_rand]] / difference_dict[
                     industry_array[industry_rand]]
-                print(personal_contrib)
                 award_amt = (difference_dict[industry_array[industry_rand]] * (get_total_wealth() * industry_values[
                     industry_array[industry_rand]] / 50) * personal_contrib)
                 award_amt = math.ceil(award_amt)
-                print(award_amt)
                 if os.path.isfile("cashcodes/" + key):
                     with open("cashcodes/" + key) as file:
                         cash_content = json.load(file)
@@ -227,7 +218,7 @@ async def account_register(interaction: interactions):
     user_id = str(interaction.user)
     users = os.scandir('users')
     for single_user in users:
-        if str(user_id) in single_user.name:
+        if user_id in single_user.name:
             await interaction.response.send_message(content='User already created!')
             return
     with open('users/' + user_id + '.json', 'w') as f:
@@ -271,16 +262,33 @@ async def company_info(interaction: interactions, desired_company: str):
 
 
 @tree.command(name="companylist", description="Command to check the list of companies")
-async def company_list(interaction: interactions):
-    file_names = []
-    result = 'Company Directories: '
+async def company_list(interaction: interactions, user_search: str):
+    if len(user_search) < 1:
+        await interaction.response.send_message(content='Please enter a search term.')
+        return
+    company_names = {}
+    message = ''
+    found = 0
     files = os.scandir('companies')
     for file in files:
-        new = file.name.replace('.json', '')
-        file_names.append(new)
-    for entry in file_names:
-        result = result + entry + ', '
-    await interaction.response.send_message(content=result)
+        if user_search in file.name:
+            with open(file) as f:
+                content = json.load(f)
+                name = content['Name']
+                funds = content['Funds']
+                company_names[name] = funds
+                found = found + 1
+    value_sorted = sorted(company_names.items(), key=lambda x: x[1], reverse=True)
+    value_sorted = dict(value_sorted)
+    if found > 10:
+        await interaction.response.send_message(content='Please narrow your search, too many results found')
+        return
+    if found == 0:
+        await interaction.response.send_message(content='No results found!')
+        return
+    for key in value_sorted.keys():
+        message = message + 'Company name: ' + str(key) + ". Valuation: " + str(value_sorted[key]) + '\n'
+    await interaction.response.send_message(content=message)
 
 
 @tree.command(name="itemprice", description="Command to check the list of item prices")
