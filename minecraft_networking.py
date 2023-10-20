@@ -32,24 +32,34 @@ class MinecraftNetworking:
             return True
 
     def send_codes(self):
+        message = ''
         if rcon.login(load_creds()):
             stats = player_stats.PlayerStats(None, None, None)
             players_list = stats.get_all_players()
-            print(players_list)
             players = rcon.command('list')
-            print(players)
             for player in players_list:
-                uuid = api.get_uuid(player)
-                files = os.scandir('cashcodes/')
-                print(uuid)
-                for file in files:
-                    if uuid in file.name:
-                        with open(file) as f:
-                            content = json.load(f)
-                            message = 'Your codes remaining are: ' + str(content.keys())
-                            print(message)
-                            cmd = rcon.command('tell ' + player + ' ' + message)
-                            print(cmd)
+                if player in players:
+                    uuid = api.get_uuid(player)
+                    files = os.scandir('cashcodes/')
+                    for file in files:
+                        new_name = file.name.replace('-', '')
+                        if uuid in new_name:
+                            with open(file) as f:
+                                content = json.load(f)
+                                if len(content.keys()) > 0:
+                                    for x in content.keys():
+                                        message = message + ' ' + x
+                                    player_message = 'Your codes remaining are: ' + message + '.' + ('You can use the '
+                                                                                                     'ATLauncher '
+                                                                                                     'console or the '
+                                                                                                     'minecraft '
+                                                                                                     'console that '
+                                                                                                     'opens alongside '
+                                                                                                     'your game to '
+                                                                                                     'copy paste, '
+                                                                                                     'and redeem them '
+                                                                                                     'via the bot!')
+                                    cmd = rcon.command('tell ' + player + ' ' + player_message)
 
     def buy_command(self):
         if not self.player_online():

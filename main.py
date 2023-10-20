@@ -23,7 +23,7 @@ tree = app_commands.CommandTree(client)  # A tree of slash commands for the bot.
 
 
 # Add the boosts to the fund mods
-# Add the redeem command
+# FIX THE MOJANG THING. WHY IS IT EVEN RETURNING NONE ON VALID UUID?
 # Add the whisper queue to whisper to the relevant minecraft player
 # test
 # Add a redeem ability to the bot, so you can redeem codes you get
@@ -89,8 +89,8 @@ def calc_item_price(item):
         return price
 
 
-# random.randint(60, 240)
-# @tasks.loop(minutes=60) - UNCOMMENT BEFORE PSUHING TO PROD ****************************************************************************************************************************************
+#
+@tasks.loop(minutes=random.randint(60, 240))
 async def generate_event():
     dt = datetime.today()
     industry_array = ['logging', 'mining', 'logistics', 'fishing', 'farming', 'crafting', 'building']
@@ -101,7 +101,7 @@ async def generate_event():
     event = company_event.CompanyEvent()
     if not event.company_cleanup() == 'cleaned':
         event_content = event.event_generator(industry_array[industry_rand], effect_array[effect_rand])
-        event.mod_funds(mod_rand, effect_array[effect_rand])
+        event.mod_funds(mod_rand, effect_array[effect_rand], industry_array[industry_rand])
         result = {math.floor(dt.timestamp()): {'message': event_content['message'],
                                                'industry': event_content['industry'],
                                                'effect': event_content['effect'], 'rate': str(mod_rand)}}
@@ -116,14 +116,16 @@ async def generate_event():
                 json.dump(result, file)
 
 
-@tasks.loop(seconds=5)
+@tasks.loop(minutes=240)
 async def give_codes():
+    print("Giving codes...")
     network = minecraft_networking.MinecraftNetworking(None, None, None)
     network.send_codes()
 
 
-@tasks.loop(seconds=15)
+@tasks.loop(minutes=random.randint(60, 120))
 async def generate_cash():
+    print("Generating cash...")
     cash_content = {}
     dt = datetime.today()
     industry_array = ['mining', 'logistics', 'fishing', 'farming', 'crafting', 'building', 'logging', ]
@@ -329,7 +331,6 @@ async def redeem(interaction: interactions, code: str):
             json.dump(content, f)
         await interaction.response.send_message(
             content='Code redeemed!')
-        return
 
 
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
@@ -438,7 +439,7 @@ async def on_ready():
     if 'player_difference.json' not in names:
         with open('player_difference.json', 'w') as f:
             pass
-    # generate_event.start() *************************************************************** UNCOMMENT b4 PROD
+    generate_event.start()
     generate_cash.start()
     give_codes.start()
     print(f'Logged in as {client.user}')

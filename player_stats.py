@@ -1,9 +1,12 @@
 import json
 import os
+
+import requests
 from mojang import API
 
 api = API()
 player_dir = '/home/karl/CelestialVanilla/world/stats/'
+
 
 class PlayerStats:
 
@@ -19,12 +22,10 @@ class PlayerStats:
             if player.name is not None:
                 cleaned = player.name.replace('.json', ' ')
                 cleaned_2 = cleaned.replace('-', '')
-                player_arr.append(cleaned_2)
-        for x in player_arr:
-            name = api.get_username(str(x))
-            print(name)
+                cleaned_3 = cleaned_2.replace(' ', '')
+                name = api.get_username(cleaned_3)
+                player_arr.append(name)
         return player_arr
-
 
     async def get_stats(self):
         uuid = api.get_uuid(self.player)
