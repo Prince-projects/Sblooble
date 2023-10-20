@@ -90,7 +90,7 @@ def calc_item_price(item):
 
 
 #
-@tasks.loop(minutes=random.randint(60, 240))
+@tasks.loop(minutes=60)
 async def generate_event():
     dt = datetime.today()
     industry_array = ['logging', 'mining', 'logistics', 'fishing', 'farming', 'crafting', 'building']
@@ -116,20 +116,20 @@ async def generate_event():
                 json.dump(result, file)
 
 
-@tasks.loop(minutes=240)
+@tasks.loop(minutes=60)
 async def give_codes():
     print("Giving codes...")
     network = minecraft_networking.MinecraftNetworking(None, None, None)
     network.send_codes()
 
 
-@tasks.loop(minutes=random.randint(60, 120))
+@tasks.loop(minutes=60)
 async def generate_cash():
     print("Generating cash...")
     cash_content = {}
     dt = datetime.today()
     industry_array = ['mining', 'logistics', 'fishing', 'farming', 'crafting', 'building', 'logging', ]
-    industry_values = {'logging': 0.001, 'mining': 0.0005, 'logistics': 0.0005, 'fishing': 0.05, 'farming': 0.005,
+    industry_values = {'logging': 0.001, 'mining': 0.0005, 'logistics': 0.00005, 'fishing': 0.05, 'farming': 0.005,
                        'crafting': 0.005, 'building': 0.0005}
     industry_rand = random.randint(0, len(industry_array) - 1)
     stats = player_stat.PlayerStats(None, None, None)
@@ -137,6 +137,7 @@ async def generate_cash():
     difference_dict = await stats.write_totals()
     event.calc_boosts(difference_dict)
     # Time to calc the individual payouts:
+    print('To Industry: ', industry_array[industry_rand])
     with open('player_difference.json') as f:
         content = json.load(f)
         content_keys = content.keys()
@@ -144,18 +145,21 @@ async def generate_cash():
             if not content[key][industry_array[industry_rand]] == 0 and not difference_dict[
                                                                                 industry_array[industry_rand]] == 0:
                 print('Generating Code..')
+                print(key)
                 personal_contrib = content[key][industry_array[industry_rand]] / difference_dict[
                     industry_array[industry_rand]]
+                print(personal_contrib)
                 award_amt = (difference_dict[industry_array[industry_rand]] * (get_total_wealth() * industry_values[
                     industry_array[industry_rand]] / 50) * personal_contrib)
                 award_amt = math.ceil(award_amt)
+                print(award_amt)
                 if os.path.isfile("cashcodes/" + key):
-                    with open("cashcodes/" + key) as f:
-                        cash_content = json.load(f)
+                    with open("cashcodes/" + key) as file:
+                        cash_content = json.load(file)
                         cash_content[
                             str(math.floor(dt.timestamp())) + str(binascii.b2a_hex(os.urandom(15)))] = award_amt
-                with open("cashcodes/" + key, 'w') as f:
-                    json.dump(cash_content, f)
+                with open("cashcodes/" + key, 'w') as cash_content_f:
+                    json.dump(cash_content, cash_content_f)
 
 
 @tree.command(name="companyeventhistory", description="A command to check event history")
@@ -309,8 +313,6 @@ async def refresh(interaction: interactions):
 async def redeem(interaction: interactions, code: str):
     marked_del = []
     if user_exists(str(interaction.user)) == 'no':
-        await interaction.response.send_message(
-            content='Register an account first')
         return
     files = os.scandir('cashcodes/')
     for file in files:

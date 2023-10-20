@@ -72,42 +72,43 @@ class CompanyEvent:
         fishing_boost = 0
         building_boost = 0
         if difference_dict['mining'] > 20000:
-            mining_boost = math.ceil(difference_dict['mining'] / 20000)
+            mining_boost = math.ceil(difference_dict['mining'] / 10000)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['mining'] > mining_boost:
                     mining_boost = old_content['mining']
         if difference_dict['logging'] > 1500:
-            logging_boost = math.ceil(difference_dict['logging'] / 1500)
+            logging_boost = math.ceil(difference_dict['logging'] / 750)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['logging'] > logging_boost:
                     logging_boost = old_content['logging']
         if difference_dict['logistics'] > 15000:
-            logi_boost = math.ceil(difference_dict['logistics'] / 15000)
+            logi_boost = math.ceil(difference_dict['logistics'] / 7000)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['logistics'] > logi_boost:
                     logi_boost = old_content['logistics']
         if difference_dict['farming'] > 15000:
-            farming_boost = math.ceil(difference_dict['farming'] / 15000)
+            farming_boost = math.ceil(difference_dict['farming'] / 7000)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['farming'] > farming_boost:
                     farming_boost = old_content['farming']
         if difference_dict['crafting'] > 10000:
-            crafting_boost = math.ceil(difference_dict['crafting'] / 10000)
+            crafting_boost = math.ceil(difference_dict['crafting'] / 5000)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['crafting'] > crafting_boost:
                     crafting_boost = old_content['crafting']
         if difference_dict['building'] > 10000:
-            building_boost = math.ceil(difference_dict['building'] / 10000)
+            building_boost = math.ceil(difference_dict['building'] / 5000)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['building'] > building_boost:
                     building_boost = old_content['building']
         if difference_dict['fishing'] > 80:
-            fishing_boost = math.ceil(difference_dict['fishing'] / 80)
+            fishing_boost = math.ceil(difference_dict['fishing'] / 40)
             if not os.stat('boosts.json').st_size == 0:
                 if old_content['fishing'] > fishing_boost:
                     fishing_boost = old_content['fishing']
         boost_dict = {'fishing': fishing_boost, 'building': building_boost, 'crafting': crafting_boost,
                       'farming': farming_boost, 'logistics': logi_boost, 'logging': logging_boost,
                       'mining': mining_boost}
+        print(boost_dict)
         with open('boosts.json', 'w') as f:
             json.dump(boost_dict, f)

@@ -136,6 +136,7 @@ class PlayerStats:
                     item_diff = player_dict[item][x] - previous_player[item][x]
                     player_difference_dict[item][x] = item_diff
         with open('player_difference.json', 'w') as f:
+            print('Difference Dict: ', difference_dict)
             json.dump(player_difference_dict, f)
         with open('individual_contributions.json', 'w') as f:
             json.dump(player_dict, f)
