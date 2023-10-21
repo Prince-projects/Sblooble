@@ -28,11 +28,11 @@ class CompanyEvent:
         files = os.scandir('companies')
         with open('boosts.json') as f:
             boost_content = json.load(f)
-            rate = rate + boost_content[industry]
         for file in files:
             with open(file) as f:
                 content = json.load(f)
                 if content['Industry'] == industry:
+                    rate = rate + boost_content[industry]
                     funds = content['Funds']
                     mod_amount = math.floor(funds * (rate / 100))
                     if effect == 'positive':

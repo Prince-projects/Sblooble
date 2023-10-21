@@ -319,6 +319,7 @@ async def refresh(interaction: interactions):
 
 @tree.command(name="redeem", description="Command to redeem codes for bot currency")
 async def redeem(interaction: interactions, code: str):
+    found = 0
     marked_del = []
     if user_exists(str(interaction.user)) == 'no':
         return
@@ -335,12 +336,17 @@ async def redeem(interaction: interactions, code: str):
                     with open('users/' + str(interaction.user) + '.json', 'w') as userfile:
                         user_content['funds'] = user_content['funds'] + content[key]
                         json.dump(user_content, userfile)
+                    found = found + 1
         for x in marked_del:
             content.pop(x)
         with open(file, 'w') as f:
             json.dump(content, f)
+    if found == 0:
         await interaction.response.send_message(
-            content='Code redeemed!')
+            content='No code found!')
+        return
+    await interaction.response.send_message(
+        content='Code redeemed!')
 
 
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
