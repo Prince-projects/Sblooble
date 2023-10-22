@@ -286,9 +286,10 @@ async def company_list(interaction: interactions, user_search: str):
     if found == 0:
         await interaction.response.send_message(content='No results found!')
         return
-    for key in value_sorted.keys():
-        message = message + 'Company name: ' + str(key) + ". Valuation: " + str(value_sorted[key]) + '\n'
-    await interaction.response.send_message(content=message)
+    else:
+        for key in value_sorted.keys():
+            message = message + 'Company name: ' + str(key) + ". Valuation: " + str(value_sorted[key]) + '\n'
+        await interaction.response.send_message(content=message)
 
 
 @tree.command(name="itemprice", description="Command to check the list of item prices")
@@ -345,8 +346,9 @@ async def redeem(interaction: interactions, code: str):
         await interaction.response.send_message(
             content='No code found!')
         return
-    await interaction.response.send_message(
-        content='Code redeemed!')
+    else:
+        await interaction.response.send_message(
+            content='Code redeemed!')
 
 
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
@@ -378,6 +380,14 @@ async def company_withdraw(interaction: interactions, withdraw_amount: float, de
 
 @tree.command(name="companydeposit", description="A command to deposit funds from a company you own.")
 async def company_deposit(interaction: interactions, deposit_amount: float, desired_company: str):
+    with open('users/' + str(interaction.user) + '.json') as file:
+        content = json.load(file)
+        if content['funds'] < deposit_amount:
+            await interaction.response.send_message(content='Not enough funds in your account!')
+            return
+    if user_exists(str(interaction.user)) == 'no':
+        await interaction.response.send_message(content='Make sure you register an account first!')
+        return
     if user_exists(str(interaction.user)) == 'no':
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
@@ -402,6 +412,7 @@ async def company_deposit(interaction: interactions, deposit_amount: float, desi
 
 @tree.command(name="itembuy", description="A command to buy items")
 async def item_buy(interaction: interactions, target: str, item: str, amount: int):
+    server = minecraft_networking.MinecraftNetworking(target, item, amount)
     if user_exists(str(interaction.user)) == 'no':
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
@@ -411,13 +422,12 @@ async def item_buy(interaction: interactions, target: str, item: str, amount: in
     if float(user_content['funds']) < item_price_individual * amount:
         await interaction.response.send_message(content='Not enough funds!')
         return
+    if not server.buy_command():
+        await interaction.response.send_message(content='Player not online!')
+        return
     with open('users/' + str(interaction.user) + '.json', 'w') as userfile:
         user_content['funds'] = user_content['funds'] - (item_price_individual * amount)
         json.dump(user_content, userfile)
-    server = minecraft_networking.MinecraftNetworking(target, item, amount)
-    if not server.buy_command():
-        await interaction.response.send_message(content='Player not online!')
-    else:
         await interaction.response.send_message(content='Buy Successful!')
 
 
