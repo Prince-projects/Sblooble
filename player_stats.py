@@ -1,7 +1,6 @@
 import json
 import os
 
-import requests
 from mojang import API
 
 api = API()

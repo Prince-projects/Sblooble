@@ -22,14 +22,15 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)  # A tree of slash commands for the bot.
 
 
-
 def load_creds():
+    """Load the credentials for auth to discord"""
     with open("creds.json") as f:
         content = json.load(f)
         return content['token']
 
 
 def convert_to_uuid(playerjson: str):
+    """Convert player's username to UUID"""
     api = API()
     uuid_prep = playerjson.replace('.json', '')
     uuid = api.get_uuid(uuid_prep)
@@ -37,6 +38,7 @@ def convert_to_uuid(playerjson: str):
 
 
 def get_total_wealth():
+    """Get the total wealth of all players and companies registered"""
     company_funds = []
     user_funds = []
     companies = os.scandir('companies')
@@ -53,26 +55,29 @@ def get_total_wealth():
 
 
 def company_exists(tested_company):
+    """Check if company exists"""
     exists = False
     existing = os.scandir('companies')
     for exist in existing:
         if exist.name == tested_company + '.json':
             exists = True
     if not exists:
-        return 'no'
+        return False
 
 
 def user_exists(user):
+    """Check if user exists"""
     exists = False
     existing = os.scandir('users')
     for exist in existing:
         if exist.name == user + '.json':
             exists = True
     if not exists:
-        return 'no'
+        return False
 
 
 def calc_item_price(item):
+    """Calc the item price relative to the total wealth"""
     with open('price_list.json') as f:
         content = json.load(f)
         keys = content.keys()
@@ -112,6 +117,7 @@ async def generate_event():
 
 @tasks.loop(minutes=60)
 async def give_codes():
+    """Send codes to users online"""
     print("Giving codes...")
     network = minecraft_networking.MinecraftNetworking(None, None, None)
     network.send_codes()
@@ -119,6 +125,7 @@ async def give_codes():
 
 @tasks.loop(minutes=60)
 async def generate_cash():
+    """Generate code and run event logic"""
     print("Generating cash...")
     cash_content = {}
     dt = datetime.today()
@@ -155,6 +162,7 @@ async def generate_cash():
 
 @tree.command(name="companyeventhistory", description="A command to check event history")
 async def event_history(interaction: interactions):
+    """Fetch the last 5 events."""
     events = ''
     with open("event_history.json") as f:
         content = json.load(f)
@@ -171,11 +179,11 @@ async def event_history(interaction: interactions):
 
 @tree.command(name="playerstatsguide", description="A guide for the stats command")
 async def player_stats_guide(interaction: interactions):
+    """Guide for checking player stats"""
     await interaction.response.send_message(content='See this pastebin for help: '
                                                     'https://pastebin.com/hQXbzPS5')
 
 
-# Need to deduct user funds
 @tree.command(name="companyregister", description="Command to register a company.")
 @app_commands.choices(
     industry=[
@@ -190,7 +198,8 @@ async def player_stats_guide(interaction: interactions):
 )
 async def company_register(interaction: interactions, name: str, funds: float, industry: app_commands.Choice[str],
                            description: str, logo: str):
-    if user_exists(str(interaction.user)) == 'no':
+    """Register a company and deposit funds"""
+    if not user_exists(str(interaction.user)):
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
     if funds < 1:
@@ -215,6 +224,7 @@ async def company_register(interaction: interactions, name: str, funds: float, i
 
 @tree.command(name="accountregister", description="Command to register an account")
 async def account_register(interaction: interactions):
+    """Create an account"""
     user_id = str(interaction.user)
     users = os.scandir('users')
     for single_user in users:
@@ -234,6 +244,7 @@ async def account_register(interaction: interactions):
 
 @tree.command(name="accountinfo", description="Command to check someone's account info")
 async def account_info(interaction: interactions, player: str):
+    """Fetch account info"""
     users = os.scandir('users')
     for single_user in users:
         if player in single_user.name:
@@ -248,7 +259,8 @@ async def account_info(interaction: interactions, player: str):
 
 @tree.command(name="companyinfo", description="Command to check the information of a company")
 async def company_info(interaction: interactions, desired_company: str):
-    if company_exists(desired_company) == 'no':
+    """Get in depth details of a company"""
+    if not company_exists(desired_company):
         await interaction.response.send_message(content='No company found.')
         return
     with open('companies/' + desired_company + '.json') as file:
@@ -263,6 +275,7 @@ async def company_info(interaction: interactions, desired_company: str):
 
 @tree.command(name="companylist", description="Command to check the list of companies")
 async def company_list(interaction: interactions, user_search: str):
+    """List companies meeting a user search"""
     if len(user_search) < 1:
         await interaction.response.send_message(content='Please enter a search term.')
         return
@@ -294,12 +307,14 @@ async def company_list(interaction: interactions, user_search: str):
 
 @tree.command(name="itemprice", description="Command to check the list of item prices")
 async def item_price(interaction: interactions, item: str):
+    """Check item prices, as it updates frequently"""
     price = calc_item_price(item)
     await interaction.response.send_message(content=str(item) + ', Price: ' + str(price))
 
 
 @tree.command(name="playerstats", description="A statistics command for Celestial's Dew.")
 async def player_stats(interaction: interactions, player: str, param1: str, param2: str):
+    """Check a player's statistics"""
     stats = player_stat.PlayerStats(player, param1, param2)
     result = await stats.find_stats()
     await interaction.response.send_message(content='Parameter: ' + param2 + '. ' + 'Result: ' + str(result))
@@ -307,6 +322,7 @@ async def player_stats(interaction: interactions, player: str, param1: str, para
 
 @tree.command(name="refresh", description="OWNER command to refresh command trees")
 async def refresh(interaction: interactions):
+    """ADMIN ONLY - Refresh global commands"""
     if str(interaction.user) == 'princecord':
         await tree.sync()
         await interaction.response.send_message(
@@ -320,9 +336,10 @@ async def refresh(interaction: interactions):
 
 @tree.command(name="redeem", description="Command to redeem codes for bot currency")
 async def redeem(interaction: interactions, code: str):
+    """Redeem a hard-earned code"""
     found = 0
     marked_del = []
-    if user_exists(str(interaction.user)) == 'no':
+    if not user_exists(str(interaction.user)):
         return
     files = os.scandir('cashcodes/')
     for file in files:
@@ -353,10 +370,11 @@ async def redeem(interaction: interactions, code: str):
 
 @tree.command(name="companywithdraw", description="A command to withdraw funds from a company you own.")
 async def company_withdraw(interaction: interactions, withdraw_amount: float, desired_company: str):
-    if user_exists(str(interaction.user)) == 'no':
+    """Withdraw funds from a company to a personal account"""
+    if not user_exists(str(interaction.user)):
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
-    if company_exists(desired_company) == 'no':
+    if not company_exists(desired_company):
         await interaction.response.send_message(content='No company found.')
         return
     with open('companies/' + desired_company + '.json') as file:
@@ -380,18 +398,16 @@ async def company_withdraw(interaction: interactions, withdraw_amount: float, de
 
 @tree.command(name="companydeposit", description="A command to deposit funds from a company you own.")
 async def company_deposit(interaction: interactions, deposit_amount: float, desired_company: str):
+    """Deposit funds from a personal account to a company account"""
     with open('users/' + str(interaction.user) + '.json') as file:
         content = json.load(file)
         if content['funds'] < deposit_amount:
             await interaction.response.send_message(content='Not enough funds in your account!')
             return
-    if user_exists(str(interaction.user)) == 'no':
+    if not user_exists(str(interaction.user)):
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
-    if user_exists(str(interaction.user)) == 'no':
-        await interaction.response.send_message(content='Make sure you register an account first!')
-        return
-    if company_exists(desired_company) == 'no':
+    if not company_exists(desired_company):
         await interaction.response.send_message(content='No company found.')
         return
     with open('companies/' + desired_company + '.json') as file:
@@ -412,8 +428,9 @@ async def company_deposit(interaction: interactions, deposit_amount: float, desi
 
 @tree.command(name="itembuy", description="A command to buy items")
 async def item_buy(interaction: interactions, target: str, item: str, amount: int):
+    """Purchase ingame items using funds"""
     server = minecraft_networking.MinecraftNetworking(target, item, amount)
-    if user_exists(str(interaction.user)) == 'no':
+    if not user_exists(str(interaction.user)):
         await interaction.response.send_message(content='Make sure you register an account first!')
         return
     item_price_individual = calc_item_price(item)
@@ -433,6 +450,7 @@ async def item_buy(interaction: interactions, target: str, item: str, amount: in
 
 @client.event
 async def on_ready():
+    """Ensure all required files are present"""
     files = os.scandir('.')
     names = []
     for file in files:
@@ -473,6 +491,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    """Ignore bot messages"""
     if message.author == client.user:
         return
 
